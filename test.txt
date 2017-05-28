@@ -1,7 +1,6 @@
 
  hello m studing git
- change at dev
-
+chage at prod
 
  done in local
 test2:wq\1
