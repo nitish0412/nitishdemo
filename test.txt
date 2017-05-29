@@ -1,6 +1,6 @@
 
  hello m studing git
- change at dev
+ change at deve
 
 
  done in local
