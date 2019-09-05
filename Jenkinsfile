@@ -4,12 +4,12 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building..'
+                build 'gitpush' // name of job1'
             }
         }
         stage('Test') {
             steps {
-                echo 'Testing..'
+                 echo 'test....' // name of job1'
             }
         }
         stage('Deploy') {
