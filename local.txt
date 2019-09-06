@@ -1,1 +1,45 @@
-hello1
+docker network create nitish_network
+docker network inspect nitish_network
+docker run  -d  -it --network my-multihost-network --name myowncont1   nginx  /bin/sh
+docker network create   --driver=bridge --subnet=181.47.2.0/16 --gateway=181.47.2.0 my-multihost-network
+
+create   docker-compose.yml
+ docker-compose up -d
+
+NETWORK ID          NAME                   DRIVER              SCOPE
+717a7ed36e1e        bridge                 bridge              local
+
+
+
+docker exec -it d454af920047 /bin/sh
+
+Docker swarm
+
+
+docker service create --replicals=10 --name images
+
+https://example2708.s3.amazonaws.com/Day+3.zip
+
+Dockercompose lab:
+https://docs.docker.com/compose/wordpress/
+
+Docker Swarm Lab:
+https://docs.docker.com/engine/swarm/swarm-tutorial/create-swarm/
+https://docs.docker.com/engine/swarm/manage-nodes/
+
+
+
+docker swarm init --advertise-addr 172.31.32.210
+
+docker swarm leave -f
+
+ docker swarm join --token SWMTKN-1-37a7z5s83gwc779pitv4f0o3pord38q0pbpmp326mbdxl5gz7t-bkg2jihpx6f5glw01k9u19lro 18.218.53.140:2377
+ 
+ to be executed in 10
+ docker service create --replicas 10  --name helloworld alpine ping docker.com
+ 
+ to check 
+ docker service ps helloworld
+ 
+ 
+ docker service create --replicas 10  --name helloworld1 httpd 
