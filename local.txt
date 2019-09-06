@@ -45,3 +45,15 @@ docker swarm leave -f
  docker service create --replicas 10  --name helloworld1 httpd 
 https://www.ansible.com/resources/videos/quick-start-video
 https://stackoverflow.com/questions/42247934/ansible-throwing-failed-to-connect-to-the-host-via-ssh-permission-denied-publ#comment71690205_42247934
+https://example2708.s3.amazonaws.com/Day+3.zip
+
+Dockercompose lab:
+https://docs.docker.com/compose/wordpress/
+
+Docker Swarm Lab:
+https://docs.docker.com/engine/swarm/swarm-tutorial/create-swarm/
+
+Ansible :
+https://www.ansible.com/resources/videos/quick-start-video
+
+https://example2708.s3.amazonaws.com/1.docx
