@@ -43,3 +43,4 @@ docker swarm leave -f
  
  
  docker service create --replicas 10  --name helloworld1 httpd 
+https://www.ansible.com/resources/videos/quick-start-video
