@@ -56,4 +56,4 @@ https://docs.docker.com/engine/swarm/swarm-tutorial/create-swarm/
 Ansible :
 https://www.ansible.com/resources/videos/quick-start-video
 
-https://example2708.s3.amazonaws.com/1.docx
+#https://example2708.s3.amazonaws.com/1.docx
