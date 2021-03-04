@@ -1,0 +1,496 @@
+Steps to setup kubernetes labs
+
+Perform the below step in all the 3 vms
+
+
+
+
+1.setup hostnames with ipaddress
+
+vi /etc/hosts
+
+
+192.168.87.141 kmaster kmaster.myserver.com
+192.168.87.142 knode1 knode1.myserver.com
+192.168.87.143 knode2 knode2.myserver.com
+
+
+in kmaster
+hostnamectl set-hostname kmaster.myserver.com
+
+in knode1
+hostnamectl set-hostname knode1.myserver.com
+
+in knode2
+hostnamectl set-hostname knode2.myserver.com
+
+2. disable the selinux and enable  br_netfilter Kernel Module (iptables for filtering,pods communication)
+
+vi /etc/selinux/config
+
+set to SELINUX= disabled
+
+
+disable the firewall
+
+systemctl status firewalld
+systemctl stop firewalld && systemctl disable firewalld && systemctl status firewalld
+
+
+3. set the netfilter kernel modules (iptables for filterings for pods commu
+nications)
+
+
+modprobe br_netfilter
+
+echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
+
+4. Disable SWAP
+
+swapoff -a
+
+5.vi /etc/fstab   (not required for Azure Linux vms)
+
+comment
+
+# #/dev/mapper/cl-swap
+
+
+6. Installing the docker latest version
+  
+yum install yum-utils device-mapper-persistent-data lvm2
+
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+
+sudo yum install docker-ce
+
+docker -v
+
+
+7.   Install Kubernetes
+
+Add the kubernetes repository to the centos 7 system by running the following command.
+
+copy and paste the below in commandline
+
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+
+8.  yum install -y kubelet kubeadm kubectl
+
+After the installation is complete, restart all those servers.
+
+sudo reboot
+
+
+
+9. Log in again to the server and start the services, docker and kubelet.
+
+systemctl start docker && systemctl enable docker
+systemctl start kubelet && systemctl enable kubelet
+
+10. Change the cgroup-driver
+cgroups (control groups) is a Linux kernel feature that limits, accounts for, and isolates the resource usage (CPU, memory, disk I/O, network, etc.) of a collection of processes.
+
+
+
+docker info | grep -i cgroup
+
+
+Now run the command below to change the kuberetes cgroup-driver to 'cgroupfs'.
+
+
+sed -i 's/cgroup-driver=systemd/cgroup-driver=cgroupfs/g' /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+Reload the systemd system and restart the kubelet service.
+
+systemctl daemon-reload
+systemctl restart kubelet
+
+complete the above steps in all machines( master node machines)
+
+
+------------------------------------------------------------------------------------------------------------------
+
+
+Step 11   - Kubernetes Cluster Initialization (in Master Machine Only)
+
+kubeadm init --apiserver-advertise-address=192.168.87.140 --pod-network-cidr=10.244.0.0/16
+
+
+Step-13: to add the nodes to kmaster: execute the below command only in nodes (complete the step 12 before the below command)
+
+kubeadm join 192.168.87.141:6443 --token 584azo.h38p9fnoh7z4cqaw \
+    --discovery-token-ca-cert-hash sha256:af2aec44e829e7fa5f31586ac49b71189596cb59b4b53f9973b583d99e37c598
+
+--------------------------------------------------
+
+
+
+Step-12 (in master only)
+
+  1.  mkdir -p $HOME/.kube
+  2. sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  3.  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  4. kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+****************************************************************************************************
+
+labs
+
+
+pod creation
+
+kubectl run <podname> --imagkubectl run mynginxpod --image=nginx --pocone= imagename --generator=run-pod/v1
+rt=80 --generator=run-pod/v1
+
+Labels:
+
+kubectl run <pod name> --image=<container image name> --port=<container port> --labels="<value1>,<value2>" --generator=run-pod/v1
+
+
+kubectl run jenkinspod --image=jenkins/jenkins --port=8080 --labels="server=jenkins,app=devops" --generator=run-pod/v1
+
+
+
+**************************************
+
+commands
+
+
+kubectl get pods -o wide
+kubectl get pods --show-labels
+kubectl get pods -l app=devops
+kubectl get pods -l server=jenkins
+kubectl get pods -o wide --show-labels
+kubectl get pods -o wide --show-labels
+kubectl describe node "knode1"
+kubectl describe node "knode2"
+kubectl describe pod mynginxpod
+
+kubectl run tomcat-rc --image=tomcat --port=8080 --generator=run/v1
+
+
+
+vi firstpod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+   name: indiapod
+spec:
+  containers:
+    - name: indiapodc1
+      image: jenkins/jenkins
+      ports:
+      - containerPort: 8080
+
+kubectl create -f firstpod.yaml
+kubectl get pods -o wide
+kubectl describe pod indiapod
+
+------------------------------
+RC
+
+kubectl create -f filename.yaml
+kubectl get pods -o wide
+kubectl describe pod <podname>
+kubectl get rc
+kubectl describe rc  <rcname>
+kubectl scale rc <rcname> --replicas=no
+-------------------------
+
+Exec
+
+kubectl exec -it <podname> /bin/bash
+kubectl exec -it  indiapod2 /bin/bash
+--------------------
+
+logs
+kubectl logs <podname>
+kubectl logs jbossrc-b82r6
+----------------------------------
+Copy
+
+
+
+
+cp /opt/softwares/Applications/dsmWebApp/ /opt/kubelabs
+
+kubectl cp WebApp1.war jbossrc-podname:/opt/jboss/wildfly/standalone/deployments
+
+http://podip:8080/WebApp1
+
+
+docker cp <container>:<dest path>
+
+-----------------------------------
+---------------------------------------
+Deployment
+
+
+---------------------------
+Namespace example
+
+docker pull ajitesh/springboot-web-app:latest
+
+kubectl create namespace flipkartproject
+kubectl run flipkartjboss --image=jboss/wildfly --port=8080 --generator=run-pod/v1 --namespace flipkartproject
+kubectl get pods --namespace flipkartproject
+
+kubectl get pods -o wide --namespace flipkartproject
+
+
+
+---------------------------------------
+
+
+ ---------------------------------------------------------------------------
+
+
+Steps to Setup the dashboard_new 
+
+
+
+Step-1: Deploy the dashboard Application
+
+
+kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml  (dont use this)
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+
+Step-2: create user for Dashboard  using below yaml file
+
+vi usercreation.yml
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kube-system
+
+kubectl create -f usercreation.yml
+
+Step-3: create a service account using below yaml file
+
+vi serviceaccount.yml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kube-system
+
+kubectl create -f serviceaccount.yml
+  
+kubectl get serviceaccount --all-namespaces | grep dashboard
+
+
+  
+  
+step-4 ----- capturing the token for admin-user
+
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+
+
+copy the token
+
+like this:   
+
+eyJhbGciOiJSUzI1NiIsImtpZCI6ImFoVjZZQmM0RFM2SjVFR2RrV1NDWVE3YjgtQ2VDZmhFdVpmLWM5QmcwalEifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLWw3bmo0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJmODYxYTgxZi1lYzk4LTQwZWItYWM1NC0yMmM4YjQ0YjYyMzgiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.eJHqg3uS_wyYXIDjGWf3TLfyADBmX5s2NjTk-UiV9Deg6CJDRlKgaEIMQJYdcN769JW2RCH6116CAynEEfEckVYmHSRzMg31nc8HmWUur1Gvat-GWcrbP8jsdJm8tKFcpICoj8bbtQu4azBMXdnjaT9L_uSWD_4YhiuUgArttv_ve8gIKidp2Z-XI-_j1jcOpUWlZ_3iPDOMT5XXRpD3o7v1WOynUaZsq6kil3PxRi_lYXHuyualMLgYauzoUA3QowA2pNBrvKq-1W7y5T8S-WzU8j_TpgtE8e5vi21iG8PNor8ihbMG6PqTBBLfhAQjLh0HKjLxQHu4bWCfpupz3Q
+
+Copy this
+
+
+Step-5 access the console Kubectl will make Dashboard available at below url
+
+kubectl proxy
+
+
+http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/. (not working)
+
+ http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/. (latest 2021 working)
+192.168.87.141
+
+ http://192.168.87.141:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.
+Token
+
+paste the token
+
+-------------------------------------------------------------------------------------
+
+
+
+https://github.com/devopsaws4/kubenertesexample.git
+
+
+try wiht ur master linux ip
+
+git clone https://github.com/devopsaws4/kubenertesexample.git
+cd kubenertesexample/tomcatservice/
+vi svc_tomcat_external.yml   (change the external to kmaster linux vm ip)
+kubectl delete svc tomcatservice2
+kubectl create -f svc_tomcat_external.yml
+
+
+http://kmasterlinux:8080/
+
+-------------------------------
+kubectl create -f https://raw.githubusercontent.com/devopsaws4/kubenertesexample/master/deployment/deployment1.yml
+kubectl get deploy
+kubectl get rs
+kubectl get rc
+kubectl get pods -o wide
+
+ kubectl rollout history deploy/tomcat
+
+kubectl rollout status deploy/tomcat
+kubectl apply -f https://raw.githubusercontent.com/devopsaws4/kubenertesexample/master/deployment/deployment2.yml
+kubectl rollout history deploy/tomcat
+kubectl rollout status deploy/tomcat
+kubectl get pods -o wide
+kubectl rollout undo deploy/tomcat --to-revision=1
+
+
+
+--------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+   name: elasticsearch
+   namespace: elk
+   labels:
+      component: elasticsearch
+spec:
+   type: LoadBalancer
+   selector:
+      component: elasticsearch
+   ports:
+   - name: http
+      port: 9200
+      protocol: TCP
+
+-------------------------------------------------
+
+Volume example
+
+ git pull https://github.com/devopsaws4/kubenertesexample.git
+ kubectl create -f pod_nginx_volume.yml
+kubectl create -f pv1.yml
+kubectl create -f myclaim1.yml
+ 
+
+goto the node where pod get created
+
+cd /opt/volume1
+
+vi index.html
+
+<html>
+<body bgcolor=pink>
+<h2> Welcome to kubenetes!,if this page appears,that means volume is working</h2>
+</body>
+</html>
+
+
+---------------------------------------
+
+
+resources:
+  requests:
+    memory: 50Mi
+    cpu: 50m
+  limits:
+    memory: 100Mi
+    cpu: 100m
+
+-----------------------------
+
+
+-----------------
+example for kubernete resoures  request/limits  (quota)
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nexus
+spec:
+  containers:
+  - name: nexus
+  image: sonatype/nexus3
+  ports:
+    - containerPort: 8080
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "1000m"
+    limits:
+      memory: "1024Mi"
+      cpu: "1200m"
+
+docker pull sonatype/nexus3
+kubectl top pod --all-namespaces
+
+kubectl get nodes --no-headers | awk '{print $1}' | xargs -I {} sh -c 'echo {}; kubectl describe node {} | grep Allocated -A 5 | grep -ve Event -ve Allocated -ve percent -ve -- ; echo'
+
+
+
+
+---------------------secret--------------------------
+
+
+
+[root@kmaster secrets]# echo -n 'admin1' | base64
+YWRtaW4x
+
+[root@kmaster secrets]# echo -n 'test12345' | base64
+dGVzdDEyMzQ1
+
+
+ cat secretexample1.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tomcatsecret
+  type: Opaque
+data:
+  username: YWRtaW4x
+  password: dGVzdDEyMzQ1
+
+
+kubectl create -f  secretexample1.yaml
+
+kubectl get secret secretname -o yaml
+
+-----------------------------------------------------------
+
+
+Kompose
+
+
+1.yum install -y epel-release
+2. yum install -y kompose
+3. git clone 
+
+
+
+Primary Feedback: https://www.surveymonkey.com/r/FX6CWRV
+
+
+
